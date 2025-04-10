@@ -1,99 +1,3046 @@
-name: Pull request feedback
-
-on:
-  pull_request_target:
-    types: [ opened, synchronize, workflow_dispatch]
-
-permissions: {}
-jobs:
-  test:
-    permissions:
-      contents: write # to push code in repo (stefanzweifel/git-auto-commit-action)
-      pull-requests: write # to comment on pull requests
-
-    runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-    steps:
-    # owner-test just checks out the PR -- this has an exfiltration risk, make SURE that
-    # this can only be triggered by people with repo write access -- such as people that can add
-    # labels to a PR
-    # https://securitylab.github.com/research/github-actions-preventing-pwn-requests
-    - name: Checkout repo for OWNER TEST
-      uses: actions/checkout@v4
-      if: contains(github.event.pull_request.labels.*.name, 'safe to test')
-      with:
-        ref: ${{ github.event.pull_request.head.ref }}
-
-    # otherwise, checkout the current master, and the pr to the subdirectory 'pull-request'
-    - name: Checkout base repo for pull-request test
-      uses: actions/checkout@v4
-      if: "! contains(github.event.pull_request.labels.*.name, 'safe to test')"
-    - name: Checkout pull-request
-      uses: actions/checkout@v4
-      if: "! contains(github.event.pull_request.labels.*.name, 'safe to test')"
-      with:
-        repository: ${{ github.event.pull_request.head.repo.full_name }}
-        path: pull-request
-        ref: ${{ github.event.pull_request.head.ref }}
-        token: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Check for relevant changes
-      uses: dorny/paths-filter@v3
-      id: changed
-      with:
-        list-files: shell
-        filters: |
-          style:
-            - '*.csl'
-            - 'dependent/*.csl'
-          locale:
-            - '*.xml'
-
-    - name: Changed files
-      run: |
-        echo changed: ${{ steps.changed.outputs.style_files }} ${{ steps.changed.outputs.locale_files }}
-
-    - name: Set up Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: 3.3.6
-    - name: but use cache to speed that up
-      uses: actions/cache@v4
-      with:
-        path: vendor/bundle
-        key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-gems-
-    - name: Bundle install
-      run: |
-        bundle config path vendor/bundle
-        bundle update sheldon --jobs 4 --retry 3
-
-    - name: Check if the user is a contributor
-      run: |
-        contributors=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${{ github.repository }}/contributors" | jq -r '.[].login')
-        if echo "$contributors" | grep -q "${{ github.event.sender.login }}"; then
-          echo "contributor=--contributor" >> $GITHUB_ENV
-        fi
-
-    - name: Welcome to a new PR
-      if: github.event.action == 'opened' && steps.changed.outputs.style == 'true'
-      run: bundle exec sheldon --token=$GITHUB_TOKEN --welcome
-
-    - name: See if the styles/locales work
-      run: bundle exec rake
-
-    - name: report
-      if: (failure() || success()) && steps.changed.outputs.style == 'true'
-      run: bundle exec sheldon --token=$GITHUB_TOKEN --${{ job.status }} --verbose ${{ env.contributor }}
-
-    - name: commit reindented styles
-      if: github.repository == 'citation-style-language/styles' && steps.changed.outputs.style == 'true'
-      continue-on-error: true
-      uses: stefanzweifel/git-auto-commit-action@v5
-      with:
-        commit_message: Re-indent CSL styles
-        file_pattern: ${{ steps.changed.outputs.style_files }}
-        repository: pull-request
-        skip_dirty_check: false
+<?xml version="1.0" encoding="utf-8"?>
+<style xmlns="http://purl.org/net/xbiblio/csl" class="note" version="1.0">
+  <info>
+    <title>Vancouver (subscript with subscript parentheses)</title>
+    <id>http://www.zotero.org/styles/vancouver-subscript-full</id>
+    <link href="http://www.zotero.org/styles/vancouver-subscript-full" rel="self"/>
+    <author>
+      <name>Custom Vancouver Style with full subscript citations (1&#8211;999)</name>
+    </author>
+    <category citation-format="numeric"/>
+    <category field="medicine"/>
+    <summary>Vancouver style with citation numbers and parentheses in full subscript, supporting up to 3 digits</summary>
+    <updated>2025-04-10T00:00:00+00:00</updated>
+  </info>
+  <locale xml:lang="en">
+    <terms>
+      <term name="et-al">et al.</term>
+    </terms>
+  </locale>
+  <macro name="format-subscript">
+    <choose>
+      <if variable="citation-number" match="any" value="1">
+        <text value="₍₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="2">
+        <text value="₍₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="3">
+        <text value="₍₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="4">
+        <text value="₍₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="5">
+        <text value="₍₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="6">
+        <text value="₍₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="7">
+        <text value="₍₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="8">
+        <text value="₍₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="9">
+        <text value="₍₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="10">
+        <text value="₍₁₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="11">
+        <text value="₍₁₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="12">
+        <text value="₍₁₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="13">
+        <text value="₍₁₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="14">
+        <text value="₍₁₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="15">
+        <text value="₍₁₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="16">
+        <text value="₍₁₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="17">
+        <text value="₍₁₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="18">
+        <text value="₍₁₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="19">
+        <text value="₍₁₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="20">
+        <text value="₍₂₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="21">
+        <text value="₍₂₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="22">
+        <text value="₍₂₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="23">
+        <text value="₍₂₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="24">
+        <text value="₍₂₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="25">
+        <text value="₍₂₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="26">
+        <text value="₍₂₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="27">
+        <text value="₍₂₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="28">
+        <text value="₍₂₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="29">
+        <text value="₍₂₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="30">
+        <text value="₍₃₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="31">
+        <text value="₍₃₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="32">
+        <text value="₍₃₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="33">
+        <text value="₍₃₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="34">
+        <text value="₍₃₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="35">
+        <text value="₍₃₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="36">
+        <text value="₍₃₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="37">
+        <text value="₍₃₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="38">
+        <text value="₍₃₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="39">
+        <text value="₍₃₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="40">
+        <text value="₍₄₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="41">
+        <text value="₍₄₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="42">
+        <text value="₍₄₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="43">
+        <text value="₍₄₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="44">
+        <text value="₍₄₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="45">
+        <text value="₍₄₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="46">
+        <text value="₍₄₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="47">
+        <text value="₍₄₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="48">
+        <text value="₍₄₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="49">
+        <text value="₍₄₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="50">
+        <text value="₍₅₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="51">
+        <text value="₍₅₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="52">
+        <text value="₍₅₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="53">
+        <text value="₍₅₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="54">
+        <text value="₍₅₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="55">
+        <text value="₍₅₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="56">
+        <text value="₍₅₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="57">
+        <text value="₍₅₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="58">
+        <text value="₍₅₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="59">
+        <text value="₍₅₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="60">
+        <text value="₍₆₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="61">
+        <text value="₍₆₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="62">
+        <text value="₍₆₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="63">
+        <text value="₍₆₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="64">
+        <text value="₍₆₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="65">
+        <text value="₍₆₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="66">
+        <text value="₍₆₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="67">
+        <text value="₍₆₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="68">
+        <text value="₍₆₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="69">
+        <text value="₍₆₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="70">
+        <text value="₍₇₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="71">
+        <text value="₍₇₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="72">
+        <text value="₍₇₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="73">
+        <text value="₍₇₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="74">
+        <text value="₍₇₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="75">
+        <text value="₍₇₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="76">
+        <text value="₍₇₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="77">
+        <text value="₍₇₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="78">
+        <text value="₍₇₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="79">
+        <text value="₍₇₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="80">
+        <text value="₍₈₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="81">
+        <text value="₍₈₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="82">
+        <text value="₍₈₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="83">
+        <text value="₍₈₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="84">
+        <text value="₍₈₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="85">
+        <text value="₍₈₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="86">
+        <text value="₍₈₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="87">
+        <text value="₍₈₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="88">
+        <text value="₍₈₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="89">
+        <text value="₍₈₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="90">
+        <text value="₍₉₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="91">
+        <text value="₍₉₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="92">
+        <text value="₍₉₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="93">
+        <text value="₍₉₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="94">
+        <text value="₍₉₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="95">
+        <text value="₍₉₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="96">
+        <text value="₍₉₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="97">
+        <text value="₍₉₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="98">
+        <text value="₍₉₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="99">
+        <text value="₍₉₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="100">
+        <text value="₍₁₀₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="101">
+        <text value="₍₁₀₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="102">
+        <text value="₍₁₀₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="103">
+        <text value="₍₁₀₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="104">
+        <text value="₍₁₀₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="105">
+        <text value="₍₁₀₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="106">
+        <text value="₍₁₀₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="107">
+        <text value="₍₁₀₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="108">
+        <text value="₍₁₀₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="109">
+        <text value="₍₁₀₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="110">
+        <text value="₍₁₁₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="111">
+        <text value="₍₁₁₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="112">
+        <text value="₍₁₁₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="113">
+        <text value="₍₁₁₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="114">
+        <text value="₍₁₁₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="115">
+        <text value="₍₁₁₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="116">
+        <text value="₍₁₁₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="117">
+        <text value="₍₁₁₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="118">
+        <text value="₍₁₁₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="119">
+        <text value="₍₁₁₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="120">
+        <text value="₍₁₂₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="121">
+        <text value="₍₁₂₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="122">
+        <text value="₍₁₂₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="123">
+        <text value="₍₁₂₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="124">
+        <text value="₍₁₂₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="125">
+        <text value="₍₁₂₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="126">
+        <text value="₍₁₂₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="127">
+        <text value="₍₁₂₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="128">
+        <text value="₍₁₂₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="129">
+        <text value="₍₁₂₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="130">
+        <text value="₍₁₃₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="131">
+        <text value="₍₁₃₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="132">
+        <text value="₍₁₃₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="133">
+        <text value="₍₁₃₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="134">
+        <text value="₍₁₃₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="135">
+        <text value="₍₁₃₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="136">
+        <text value="₍₁₃₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="137">
+        <text value="₍₁₃₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="138">
+        <text value="₍₁₃₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="139">
+        <text value="₍₁₃₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="140">
+        <text value="₍₁₄₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="141">
+        <text value="₍₁₄₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="142">
+        <text value="₍₁₄₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="143">
+        <text value="₍₁₄₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="144">
+        <text value="₍₁₄₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="145">
+        <text value="₍₁₄₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="146">
+        <text value="₍₁₄₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="147">
+        <text value="₍₁₄₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="148">
+        <text value="₍₁₄₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="149">
+        <text value="₍₁₄₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="150">
+        <text value="₍₁₅₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="151">
+        <text value="₍₁₅₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="152">
+        <text value="₍₁₅₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="153">
+        <text value="₍₁₅₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="154">
+        <text value="₍₁₅₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="155">
+        <text value="₍₁₅₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="156">
+        <text value="₍₁₅₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="157">
+        <text value="₍₁₅₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="158">
+        <text value="₍₁₅₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="159">
+        <text value="₍₁₅₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="160">
+        <text value="₍₁₆₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="161">
+        <text value="₍₁₆₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="162">
+        <text value="₍₁₆₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="163">
+        <text value="₍₁₆₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="164">
+        <text value="₍₁₆₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="165">
+        <text value="₍₁₆₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="166">
+        <text value="₍₁₆₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="167">
+        <text value="₍₁₆₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="168">
+        <text value="₍₁₆₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="169">
+        <text value="₍₁₆₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="170">
+        <text value="₍₁₇₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="171">
+        <text value="₍₁₇₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="172">
+        <text value="₍₁₇₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="173">
+        <text value="₍₁₇₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="174">
+        <text value="₍₁₇₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="175">
+        <text value="₍₁₇₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="176">
+        <text value="₍₁₇₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="177">
+        <text value="₍₁₇₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="178">
+        <text value="₍₁₇₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="179">
+        <text value="₍₁₇₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="180">
+        <text value="₍₁₈₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="181">
+        <text value="₍₁₈₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="182">
+        <text value="₍₁₈₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="183">
+        <text value="₍₁₈₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="184">
+        <text value="₍₁₈₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="185">
+        <text value="₍₁₈₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="186">
+        <text value="₍₁₈₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="187">
+        <text value="₍₁₈₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="188">
+        <text value="₍₁₈₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="189">
+        <text value="₍₁₈₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="190">
+        <text value="₍₁₉₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="191">
+        <text value="₍₁₉₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="192">
+        <text value="₍₁₉₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="193">
+        <text value="₍₁₉₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="194">
+        <text value="₍₁₉₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="195">
+        <text value="₍₁₉₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="196">
+        <text value="₍₁₉₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="197">
+        <text value="₍₁₉₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="198">
+        <text value="₍₁₉₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="199">
+        <text value="₍₁₉₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="200">
+        <text value="₍₂₀₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="201">
+        <text value="₍₂₀₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="202">
+        <text value="₍₂₀₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="203">
+        <text value="₍₂₀₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="204">
+        <text value="₍₂₀₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="205">
+        <text value="₍₂₀₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="206">
+        <text value="₍₂₀₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="207">
+        <text value="₍₂₀₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="208">
+        <text value="₍₂₀₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="209">
+        <text value="₍₂₀₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="210">
+        <text value="₍₂₁₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="211">
+        <text value="₍₂₁₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="212">
+        <text value="₍₂₁₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="213">
+        <text value="₍₂₁₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="214">
+        <text value="₍₂₁₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="215">
+        <text value="₍₂₁₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="216">
+        <text value="₍₂₁₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="217">
+        <text value="₍₂₁₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="218">
+        <text value="₍₂₁₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="219">
+        <text value="₍₂₁₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="220">
+        <text value="₍₂₂₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="221">
+        <text value="₍₂₂₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="222">
+        <text value="₍₂₂₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="223">
+        <text value="₍₂₂₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="224">
+        <text value="₍₂₂₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="225">
+        <text value="₍₂₂₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="226">
+        <text value="₍₂₂₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="227">
+        <text value="₍₂₂₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="228">
+        <text value="₍₂₂₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="229">
+        <text value="₍₂₂₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="230">
+        <text value="₍₂₃₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="231">
+        <text value="₍₂₃₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="232">
+        <text value="₍₂₃₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="233">
+        <text value="₍₂₃₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="234">
+        <text value="₍₂₃₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="235">
+        <text value="₍₂₃₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="236">
+        <text value="₍₂₃₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="237">
+        <text value="₍₂₃₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="238">
+        <text value="₍₂₃₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="239">
+        <text value="₍₂₃₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="240">
+        <text value="₍₂₄₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="241">
+        <text value="₍₂₄₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="242">
+        <text value="₍₂₄₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="243">
+        <text value="₍₂₄₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="244">
+        <text value="₍₂₄₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="245">
+        <text value="₍₂₄₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="246">
+        <text value="₍₂₄₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="247">
+        <text value="₍₂₄₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="248">
+        <text value="₍₂₄₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="249">
+        <text value="₍₂₄₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="250">
+        <text value="₍₂₅₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="251">
+        <text value="₍₂₅₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="252">
+        <text value="₍₂₅₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="253">
+        <text value="₍₂₅₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="254">
+        <text value="₍₂₅₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="255">
+        <text value="₍₂₅₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="256">
+        <text value="₍₂₅₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="257">
+        <text value="₍₂₅₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="258">
+        <text value="₍₂₅₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="259">
+        <text value="₍₂₅₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="260">
+        <text value="₍₂₆₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="261">
+        <text value="₍₂₆₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="262">
+        <text value="₍₂₆₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="263">
+        <text value="₍₂₆₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="264">
+        <text value="₍₂₆₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="265">
+        <text value="₍₂₆₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="266">
+        <text value="₍₂₆₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="267">
+        <text value="₍₂₆₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="268">
+        <text value="₍₂₆₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="269">
+        <text value="₍₂₆₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="270">
+        <text value="₍₂₇₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="271">
+        <text value="₍₂₇₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="272">
+        <text value="₍₂₇₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="273">
+        <text value="₍₂₇₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="274">
+        <text value="₍₂₇₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="275">
+        <text value="₍₂₇₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="276">
+        <text value="₍₂₇₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="277">
+        <text value="₍₂₇₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="278">
+        <text value="₍₂₇₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="279">
+        <text value="₍₂₇₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="280">
+        <text value="₍₂₈₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="281">
+        <text value="₍₂₈₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="282">
+        <text value="₍₂₈₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="283">
+        <text value="₍₂₈₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="284">
+        <text value="₍₂₈₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="285">
+        <text value="₍₂₈₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="286">
+        <text value="₍₂₈₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="287">
+        <text value="₍₂₈₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="288">
+        <text value="₍₂₈₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="289">
+        <text value="₍₂₈₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="290">
+        <text value="₍₂₉₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="291">
+        <text value="₍₂₉₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="292">
+        <text value="₍₂₉₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="293">
+        <text value="₍₂₉₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="294">
+        <text value="₍₂₉₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="295">
+        <text value="₍₂₉₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="296">
+        <text value="₍₂₉₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="297">
+        <text value="₍₂₉₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="298">
+        <text value="₍₂₉₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="299">
+        <text value="₍₂₉₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="300">
+        <text value="₍₃₀₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="301">
+        <text value="₍₃₀₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="302">
+        <text value="₍₃₀₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="303">
+        <text value="₍₃₀₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="304">
+        <text value="₍₃₀₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="305">
+        <text value="₍₃₀₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="306">
+        <text value="₍₃₀₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="307">
+        <text value="₍₃₀₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="308">
+        <text value="₍₃₀₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="309">
+        <text value="₍₃₀₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="310">
+        <text value="₍₃₁₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="311">
+        <text value="₍₃₁₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="312">
+        <text value="₍₃₁₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="313">
+        <text value="₍₃₁₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="314">
+        <text value="₍₃₁₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="315">
+        <text value="₍₃₁₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="316">
+        <text value="₍₃₁₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="317">
+        <text value="₍₃₁₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="318">
+        <text value="₍₃₁₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="319">
+        <text value="₍₃₁₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="320">
+        <text value="₍₃₂₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="321">
+        <text value="₍₃₂₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="322">
+        <text value="₍₃₂₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="323">
+        <text value="₍₃₂₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="324">
+        <text value="₍₃₂₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="325">
+        <text value="₍₃₂₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="326">
+        <text value="₍₃₂₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="327">
+        <text value="₍₃₂₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="328">
+        <text value="₍₃₂₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="329">
+        <text value="₍₃₂₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="330">
+        <text value="₍₃₃₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="331">
+        <text value="₍₃₃₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="332">
+        <text value="₍₃₃₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="333">
+        <text value="₍₃₃₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="334">
+        <text value="₍₃₃₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="335">
+        <text value="₍₃₃₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="336">
+        <text value="₍₃₃₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="337">
+        <text value="₍₃₃₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="338">
+        <text value="₍₃₃₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="339">
+        <text value="₍₃₃₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="340">
+        <text value="₍₃₄₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="341">
+        <text value="₍₃₄₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="342">
+        <text value="₍₃₄₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="343">
+        <text value="₍₃₄₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="344">
+        <text value="₍₃₄₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="345">
+        <text value="₍₃₄₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="346">
+        <text value="₍₃₄₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="347">
+        <text value="₍₃₄₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="348">
+        <text value="₍₃₄₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="349">
+        <text value="₍₃₄₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="350">
+        <text value="₍₃₅₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="351">
+        <text value="₍₃₅₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="352">
+        <text value="₍₃₅₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="353">
+        <text value="₍₃₅₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="354">
+        <text value="₍₃₅₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="355">
+        <text value="₍₃₅₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="356">
+        <text value="₍₃₅₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="357">
+        <text value="₍₃₅₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="358">
+        <text value="₍₃₅₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="359">
+        <text value="₍₃₅₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="360">
+        <text value="₍₃₆₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="361">
+        <text value="₍₃₆₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="362">
+        <text value="₍₃₆₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="363">
+        <text value="₍₃₆₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="364">
+        <text value="₍₃₆₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="365">
+        <text value="₍₃₆₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="366">
+        <text value="₍₃₆₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="367">
+        <text value="₍₃₆₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="368">
+        <text value="₍₃₆₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="369">
+        <text value="₍₃₆₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="370">
+        <text value="₍₃₇₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="371">
+        <text value="₍₃₇₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="372">
+        <text value="₍₃₇₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="373">
+        <text value="₍₃₇₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="374">
+        <text value="₍₃₇₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="375">
+        <text value="₍₃₇₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="376">
+        <text value="₍₃₇₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="377">
+        <text value="₍₃₇₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="378">
+        <text value="₍₃₇₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="379">
+        <text value="₍₃₇₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="380">
+        <text value="₍₃₈₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="381">
+        <text value="₍₃₈₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="382">
+        <text value="₍₃₈₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="383">
+        <text value="₍₃₈₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="384">
+        <text value="₍₃₈₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="385">
+        <text value="₍₃₈₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="386">
+        <text value="₍₃₈₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="387">
+        <text value="₍₃₈₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="388">
+        <text value="₍₃₈₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="389">
+        <text value="₍₃₈₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="390">
+        <text value="₍₃₉₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="391">
+        <text value="₍₃₉₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="392">
+        <text value="₍₃₉₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="393">
+        <text value="₍₃₉₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="394">
+        <text value="₍₃₉₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="395">
+        <text value="₍₃₉₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="396">
+        <text value="₍₃₉₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="397">
+        <text value="₍₃₉₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="398">
+        <text value="₍₃₉₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="399">
+        <text value="₍₃₉₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="400">
+        <text value="₍₄₀₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="401">
+        <text value="₍₄₀₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="402">
+        <text value="₍₄₀₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="403">
+        <text value="₍₄₀₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="404">
+        <text value="₍₄₀₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="405">
+        <text value="₍₄₀₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="406">
+        <text value="₍₄₀₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="407">
+        <text value="₍₄₀₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="408">
+        <text value="₍₄₀₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="409">
+        <text value="₍₄₀₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="410">
+        <text value="₍₄₁₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="411">
+        <text value="₍₄₁₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="412">
+        <text value="₍₄₁₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="413">
+        <text value="₍₄₁₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="414">
+        <text value="₍₄₁₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="415">
+        <text value="₍₄₁₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="416">
+        <text value="₍₄₁₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="417">
+        <text value="₍₄₁₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="418">
+        <text value="₍₄₁₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="419">
+        <text value="₍₄₁₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="420">
+        <text value="₍₄₂₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="421">
+        <text value="₍₄₂₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="422">
+        <text value="₍₄₂₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="423">
+        <text value="₍₄₂₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="424">
+        <text value="₍₄₂₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="425">
+        <text value="₍₄₂₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="426">
+        <text value="₍₄₂₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="427">
+        <text value="₍₄₂₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="428">
+        <text value="₍₄₂₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="429">
+        <text value="₍₄₂₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="430">
+        <text value="₍₄₃₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="431">
+        <text value="₍₄₃₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="432">
+        <text value="₍₄₃₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="433">
+        <text value="₍₄₃₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="434">
+        <text value="₍₄₃₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="435">
+        <text value="₍₄₃₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="436">
+        <text value="₍₄₃₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="437">
+        <text value="₍₄₃₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="438">
+        <text value="₍₄₃₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="439">
+        <text value="₍₄₃₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="440">
+        <text value="₍₄₄₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="441">
+        <text value="₍₄₄₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="442">
+        <text value="₍₄₄₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="443">
+        <text value="₍₄₄₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="444">
+        <text value="₍₄₄₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="445">
+        <text value="₍₄₄₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="446">
+        <text value="₍₄₄₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="447">
+        <text value="₍₄₄₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="448">
+        <text value="₍₄₄₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="449">
+        <text value="₍₄₄₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="450">
+        <text value="₍₄₅₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="451">
+        <text value="₍₄₅₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="452">
+        <text value="₍₄₅₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="453">
+        <text value="₍₄₅₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="454">
+        <text value="₍₄₅₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="455">
+        <text value="₍₄₅₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="456">
+        <text value="₍₄₅₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="457">
+        <text value="₍₄₅₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="458">
+        <text value="₍₄₅₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="459">
+        <text value="₍₄₅₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="460">
+        <text value="₍₄₆₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="461">
+        <text value="₍₄₆₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="462">
+        <text value="₍₄₆₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="463">
+        <text value="₍₄₆₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="464">
+        <text value="₍₄₆₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="465">
+        <text value="₍₄₆₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="466">
+        <text value="₍₄₆₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="467">
+        <text value="₍₄₆₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="468">
+        <text value="₍₄₆₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="469">
+        <text value="₍₄₆₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="470">
+        <text value="₍₄₇₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="471">
+        <text value="₍₄₇₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="472">
+        <text value="₍₄₇₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="473">
+        <text value="₍₄₇₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="474">
+        <text value="₍₄₇₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="475">
+        <text value="₍₄₇₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="476">
+        <text value="₍₄₇₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="477">
+        <text value="₍₄₇₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="478">
+        <text value="₍₄₇₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="479">
+        <text value="₍₄₇₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="480">
+        <text value="₍₄₈₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="481">
+        <text value="₍₄₈₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="482">
+        <text value="₍₄₈₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="483">
+        <text value="₍₄₈₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="484">
+        <text value="₍₄₈₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="485">
+        <text value="₍₄₈₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="486">
+        <text value="₍₄₈₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="487">
+        <text value="₍₄₈₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="488">
+        <text value="₍₄₈₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="489">
+        <text value="₍₄₈₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="490">
+        <text value="₍₄₉₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="491">
+        <text value="₍₄₉₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="492">
+        <text value="₍₄₉₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="493">
+        <text value="₍₄₉₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="494">
+        <text value="₍₄₉₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="495">
+        <text value="₍₄₉₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="496">
+        <text value="₍₄₉₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="497">
+        <text value="₍₄₉₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="498">
+        <text value="₍₄₉₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="499">
+        <text value="₍₄₉₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="500">
+        <text value="₍₅₀₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="501">
+        <text value="₍₅₀₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="502">
+        <text value="₍₅₀₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="503">
+        <text value="₍₅₀₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="504">
+        <text value="₍₅₀₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="505">
+        <text value="₍₅₀₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="506">
+        <text value="₍₅₀₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="507">
+        <text value="₍₅₀₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="508">
+        <text value="₍₅₀₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="509">
+        <text value="₍₅₀₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="510">
+        <text value="₍₅₁₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="511">
+        <text value="₍₅₁₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="512">
+        <text value="₍₅₁₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="513">
+        <text value="₍₅₁₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="514">
+        <text value="₍₅₁₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="515">
+        <text value="₍₅₁₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="516">
+        <text value="₍₅₁₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="517">
+        <text value="₍₅₁₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="518">
+        <text value="₍₅₁₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="519">
+        <text value="₍₅₁₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="520">
+        <text value="₍₅₂₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="521">
+        <text value="₍₅₂₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="522">
+        <text value="₍₅₂₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="523">
+        <text value="₍₅₂₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="524">
+        <text value="₍₅₂₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="525">
+        <text value="₍₅₂₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="526">
+        <text value="₍₅₂₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="527">
+        <text value="₍₅₂₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="528">
+        <text value="₍₅₂₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="529">
+        <text value="₍₅₂₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="530">
+        <text value="₍₅₃₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="531">
+        <text value="₍₅₃₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="532">
+        <text value="₍₅₃₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="533">
+        <text value="₍₅₃₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="534">
+        <text value="₍₅₃₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="535">
+        <text value="₍₅₃₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="536">
+        <text value="₍₅₃₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="537">
+        <text value="₍₅₃₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="538">
+        <text value="₍₅₃₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="539">
+        <text value="₍₅₃₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="540">
+        <text value="₍₅₄₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="541">
+        <text value="₍₅₄₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="542">
+        <text value="₍₅₄₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="543">
+        <text value="₍₅₄₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="544">
+        <text value="₍₅₄₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="545">
+        <text value="₍₅₄₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="546">
+        <text value="₍₅₄₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="547">
+        <text value="₍₅₄₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="548">
+        <text value="₍₅₄₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="549">
+        <text value="₍₅₄₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="550">
+        <text value="₍₅₅₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="551">
+        <text value="₍₅₅₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="552">
+        <text value="₍₅₅₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="553">
+        <text value="₍₅₅₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="554">
+        <text value="₍₅₅₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="555">
+        <text value="₍₅₅₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="556">
+        <text value="₍₅₅₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="557">
+        <text value="₍₅₅₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="558">
+        <text value="₍₅₅₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="559">
+        <text value="₍₅₅₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="560">
+        <text value="₍₅₆₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="561">
+        <text value="₍₅₆₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="562">
+        <text value="₍₅₆₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="563">
+        <text value="₍₅₆₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="564">
+        <text value="₍₅₆₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="565">
+        <text value="₍₅₆₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="566">
+        <text value="₍₅₆₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="567">
+        <text value="₍₅₆₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="568">
+        <text value="₍₅₆₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="569">
+        <text value="₍₅₆₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="570">
+        <text value="₍₅₇₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="571">
+        <text value="₍₅₇₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="572">
+        <text value="₍₅₇₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="573">
+        <text value="₍₅₇₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="574">
+        <text value="₍₅₇₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="575">
+        <text value="₍₅₇₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="576">
+        <text value="₍₅₇₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="577">
+        <text value="₍₅₇₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="578">
+        <text value="₍₅₇₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="579">
+        <text value="₍₅₇₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="580">
+        <text value="₍₅₈₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="581">
+        <text value="₍₅₈₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="582">
+        <text value="₍₅₈₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="583">
+        <text value="₍₅₈₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="584">
+        <text value="₍₅₈₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="585">
+        <text value="₍₅₈₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="586">
+        <text value="₍₅₈₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="587">
+        <text value="₍₅₈₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="588">
+        <text value="₍₅₈₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="589">
+        <text value="₍₅₈₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="590">
+        <text value="₍₅₉₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="591">
+        <text value="₍₅₉₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="592">
+        <text value="₍₅₉₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="593">
+        <text value="₍₅₉₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="594">
+        <text value="₍₅₉₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="595">
+        <text value="₍₅₉₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="596">
+        <text value="₍₅₉₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="597">
+        <text value="₍₅₉₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="598">
+        <text value="₍₅₉₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="599">
+        <text value="₍₅₉₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="600">
+        <text value="₍₆₀₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="601">
+        <text value="₍₆₀₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="602">
+        <text value="₍₆₀₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="603">
+        <text value="₍₆₀₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="604">
+        <text value="₍₆₀₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="605">
+        <text value="₍₆₀₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="606">
+        <text value="₍₆₀₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="607">
+        <text value="₍₆₀₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="608">
+        <text value="₍₆₀₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="609">
+        <text value="₍₆₀₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="610">
+        <text value="₍₆₁₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="611">
+        <text value="₍₆₁₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="612">
+        <text value="₍₆₁₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="613">
+        <text value="₍₆₁₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="614">
+        <text value="₍₆₁₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="615">
+        <text value="₍₆₁₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="616">
+        <text value="₍₆₁₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="617">
+        <text value="₍₆₁₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="618">
+        <text value="₍₆₁₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="619">
+        <text value="₍₆₁₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="620">
+        <text value="₍₆₂₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="621">
+        <text value="₍₆₂₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="622">
+        <text value="₍₆₂₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="623">
+        <text value="₍₆₂₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="624">
+        <text value="₍₆₂₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="625">
+        <text value="₍₆₂₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="626">
+        <text value="₍₆₂₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="627">
+        <text value="₍₆₂₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="628">
+        <text value="₍₆₂₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="629">
+        <text value="₍₆₂₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="630">
+        <text value="₍₆₃₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="631">
+        <text value="₍₆₃₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="632">
+        <text value="₍₆₃₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="633">
+        <text value="₍₆₃₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="634">
+        <text value="₍₆₃₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="635">
+        <text value="₍₆₃₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="636">
+        <text value="₍₆₃₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="637">
+        <text value="₍₆₃₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="638">
+        <text value="₍₆₃₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="639">
+        <text value="₍₆₃₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="640">
+        <text value="₍₆₄₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="641">
+        <text value="₍₆₄₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="642">
+        <text value="₍₆₄₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="643">
+        <text value="₍₆₄₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="644">
+        <text value="₍₆₄₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="645">
+        <text value="₍₆₄₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="646">
+        <text value="₍₆₄₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="647">
+        <text value="₍₆₄₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="648">
+        <text value="₍₆₄₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="649">
+        <text value="₍₆₄₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="650">
+        <text value="₍₆₅₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="651">
+        <text value="₍₆₅₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="652">
+        <text value="₍₆₅₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="653">
+        <text value="₍₆₅₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="654">
+        <text value="₍₆₅₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="655">
+        <text value="₍₆₅₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="656">
+        <text value="₍₆₅₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="657">
+        <text value="₍₆₅₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="658">
+        <text value="₍₆₅₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="659">
+        <text value="₍₆₅₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="660">
+        <text value="₍₆₆₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="661">
+        <text value="₍₆₆₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="662">
+        <text value="₍₆₆₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="663">
+        <text value="₍₆₆₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="664">
+        <text value="₍₆₆₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="665">
+        <text value="₍₆₆₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="666">
+        <text value="₍₆₆₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="667">
+        <text value="₍₆₆₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="668">
+        <text value="₍₆₆₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="669">
+        <text value="₍₆₆₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="670">
+        <text value="₍₆₇₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="671">
+        <text value="₍₆₇₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="672">
+        <text value="₍₆₇₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="673">
+        <text value="₍₆₇₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="674">
+        <text value="₍₆₇₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="675">
+        <text value="₍₆₇₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="676">
+        <text value="₍₆₇₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="677">
+        <text value="₍₆₇₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="678">
+        <text value="₍₆₇₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="679">
+        <text value="₍₆₇₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="680">
+        <text value="₍₆₈₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="681">
+        <text value="₍₆₈₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="682">
+        <text value="₍₆₈₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="683">
+        <text value="₍₆₈₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="684">
+        <text value="₍₆₈₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="685">
+        <text value="₍₆₈₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="686">
+        <text value="₍₆₈₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="687">
+        <text value="₍₆₈₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="688">
+        <text value="₍₆₈₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="689">
+        <text value="₍₆₈₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="690">
+        <text value="₍₆₉₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="691">
+        <text value="₍₆₉₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="692">
+        <text value="₍₆₉₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="693">
+        <text value="₍₆₉₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="694">
+        <text value="₍₆₉₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="695">
+        <text value="₍₆₉₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="696">
+        <text value="₍₆₉₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="697">
+        <text value="₍₆₉₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="698">
+        <text value="₍₆₉₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="699">
+        <text value="₍₆₉₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="700">
+        <text value="₍₇₀₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="701">
+        <text value="₍₇₀₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="702">
+        <text value="₍₇₀₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="703">
+        <text value="₍₇₀₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="704">
+        <text value="₍₇₀₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="705">
+        <text value="₍₇₀₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="706">
+        <text value="₍₇₀₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="707">
+        <text value="₍₇₀₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="708">
+        <text value="₍₇₀₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="709">
+        <text value="₍₇₀₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="710">
+        <text value="₍₇₁₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="711">
+        <text value="₍₇₁₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="712">
+        <text value="₍₇₁₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="713">
+        <text value="₍₇₁₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="714">
+        <text value="₍₇₁₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="715">
+        <text value="₍₇₁₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="716">
+        <text value="₍₇₁₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="717">
+        <text value="₍₇₁₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="718">
+        <text value="₍₇₁₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="719">
+        <text value="₍₇₁₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="720">
+        <text value="₍₇₂₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="721">
+        <text value="₍₇₂₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="722">
+        <text value="₍₇₂₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="723">
+        <text value="₍₇₂₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="724">
+        <text value="₍₇₂₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="725">
+        <text value="₍₇₂₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="726">
+        <text value="₍₇₂₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="727">
+        <text value="₍₇₂₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="728">
+        <text value="₍₇₂₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="729">
+        <text value="₍₇₂₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="730">
+        <text value="₍₇₃₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="731">
+        <text value="₍₇₃₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="732">
+        <text value="₍₇₃₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="733">
+        <text value="₍₇₃₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="734">
+        <text value="₍₇₃₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="735">
+        <text value="₍₇₃₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="736">
+        <text value="₍₇₃₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="737">
+        <text value="₍₇₃₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="738">
+        <text value="₍₇₃₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="739">
+        <text value="₍₇₃₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="740">
+        <text value="₍₇₄₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="741">
+        <text value="₍₇₄₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="742">
+        <text value="₍₇₄₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="743">
+        <text value="₍₇₄₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="744">
+        <text value="₍₇₄₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="745">
+        <text value="₍₇₄₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="746">
+        <text value="₍₇₄₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="747">
+        <text value="₍₇₄₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="748">
+        <text value="₍₇₄₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="749">
+        <text value="₍₇₄₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="750">
+        <text value="₍₇₅₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="751">
+        <text value="₍₇₅₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="752">
+        <text value="₍₇₅₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="753">
+        <text value="₍₇₅₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="754">
+        <text value="₍₇₅₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="755">
+        <text value="₍₇₅₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="756">
+        <text value="₍₇₅₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="757">
+        <text value="₍₇₅₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="758">
+        <text value="₍₇₅₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="759">
+        <text value="₍₇₅₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="760">
+        <text value="₍₇₆₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="761">
+        <text value="₍₇₆₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="762">
+        <text value="₍₇₆₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="763">
+        <text value="₍₇₆₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="764">
+        <text value="₍₇₆₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="765">
+        <text value="₍₇₆₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="766">
+        <text value="₍₇₆₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="767">
+        <text value="₍₇₆₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="768">
+        <text value="₍₇₆₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="769">
+        <text value="₍₇₆₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="770">
+        <text value="₍₇₇₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="771">
+        <text value="₍₇₇₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="772">
+        <text value="₍₇₇₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="773">
+        <text value="₍₇₇₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="774">
+        <text value="₍₇₇₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="775">
+        <text value="₍₇₇₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="776">
+        <text value="₍₇₇₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="777">
+        <text value="₍₇₇₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="778">
+        <text value="₍₇₇₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="779">
+        <text value="₍₇₇₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="780">
+        <text value="₍₇₈₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="781">
+        <text value="₍₇₈₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="782">
+        <text value="₍₇₈₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="783">
+        <text value="₍₇₈₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="784">
+        <text value="₍₇₈₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="785">
+        <text value="₍₇₈₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="786">
+        <text value="₍₇₈₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="787">
+        <text value="₍₇₈₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="788">
+        <text value="₍₇₈₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="789">
+        <text value="₍₇₈₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="790">
+        <text value="₍₇₉₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="791">
+        <text value="₍₇₉₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="792">
+        <text value="₍₇₉₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="793">
+        <text value="₍₇₉₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="794">
+        <text value="₍₇₉₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="795">
+        <text value="₍₇₉₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="796">
+        <text value="₍₇₉₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="797">
+        <text value="₍₇₉₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="798">
+        <text value="₍₇₉₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="799">
+        <text value="₍₇₉₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="800">
+        <text value="₍₈₀₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="801">
+        <text value="₍₈₀₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="802">
+        <text value="₍₈₀₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="803">
+        <text value="₍₈₀₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="804">
+        <text value="₍₈₀₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="805">
+        <text value="₍₈₀₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="806">
+        <text value="₍₈₀₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="807">
+        <text value="₍₈₀₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="808">
+        <text value="₍₈₀₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="809">
+        <text value="₍₈₀₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="810">
+        <text value="₍₈₁₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="811">
+        <text value="₍₈₁₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="812">
+        <text value="₍₈₁₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="813">
+        <text value="₍₈₁₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="814">
+        <text value="₍₈₁₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="815">
+        <text value="₍₈₁₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="816">
+        <text value="₍₈₁₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="817">
+        <text value="₍₈₁₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="818">
+        <text value="₍₈₁₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="819">
+        <text value="₍₈₁₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="820">
+        <text value="₍₈₂₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="821">
+        <text value="₍₈₂₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="822">
+        <text value="₍₈₂₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="823">
+        <text value="₍₈₂₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="824">
+        <text value="₍₈₂₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="825">
+        <text value="₍₈₂₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="826">
+        <text value="₍₈₂₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="827">
+        <text value="₍₈₂₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="828">
+        <text value="₍₈₂₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="829">
+        <text value="₍₈₂₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="830">
+        <text value="₍₈₃₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="831">
+        <text value="₍₈₃₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="832">
+        <text value="₍₈₃₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="833">
+        <text value="₍₈₃₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="834">
+        <text value="₍₈₃₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="835">
+        <text value="₍₈₃₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="836">
+        <text value="₍₈₃₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="837">
+        <text value="₍₈₃₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="838">
+        <text value="₍₈₃₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="839">
+        <text value="₍₈₃₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="840">
+        <text value="₍₈₄₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="841">
+        <text value="₍₈₄₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="842">
+        <text value="₍₈₄₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="843">
+        <text value="₍₈₄₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="844">
+        <text value="₍₈₄₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="845">
+        <text value="₍₈₄₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="846">
+        <text value="₍₈₄₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="847">
+        <text value="₍₈₄₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="848">
+        <text value="₍₈₄₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="849">
+        <text value="₍₈₄₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="850">
+        <text value="₍₈₅₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="851">
+        <text value="₍₈₅₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="852">
+        <text value="₍₈₅₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="853">
+        <text value="₍₈₅₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="854">
+        <text value="₍₈₅₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="855">
+        <text value="₍₈₅₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="856">
+        <text value="₍₈₅₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="857">
+        <text value="₍₈₅₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="858">
+        <text value="₍₈₅₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="859">
+        <text value="₍₈₅₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="860">
+        <text value="₍₈₆₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="861">
+        <text value="₍₈₆₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="862">
+        <text value="₍₈₆₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="863">
+        <text value="₍₈₆₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="864">
+        <text value="₍₈₆₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="865">
+        <text value="₍₈₆₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="866">
+        <text value="₍₈₆₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="867">
+        <text value="₍₈₆₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="868">
+        <text value="₍₈₆₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="869">
+        <text value="₍₈₆₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="870">
+        <text value="₍₈₇₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="871">
+        <text value="₍₈₇₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="872">
+        <text value="₍₈₇₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="873">
+        <text value="₍₈₇₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="874">
+        <text value="₍₈₇₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="875">
+        <text value="₍₈₇₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="876">
+        <text value="₍₈₇₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="877">
+        <text value="₍₈₇₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="878">
+        <text value="₍₈₇₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="879">
+        <text value="₍₈₇₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="880">
+        <text value="₍₈₈₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="881">
+        <text value="₍₈₈₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="882">
+        <text value="₍₈₈₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="883">
+        <text value="₍₈₈₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="884">
+        <text value="₍₈₈₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="885">
+        <text value="₍₈₈₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="886">
+        <text value="₍₈₈₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="887">
+        <text value="₍₈₈₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="888">
+        <text value="₍₈₈₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="889">
+        <text value="₍₈₈₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="890">
+        <text value="₍₈₉₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="891">
+        <text value="₍₈₉₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="892">
+        <text value="₍₈₉₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="893">
+        <text value="₍₈₉₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="894">
+        <text value="₍₈₉₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="895">
+        <text value="₍₈₉₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="896">
+        <text value="₍₈₉₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="897">
+        <text value="₍₈₉₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="898">
+        <text value="₍₈₉₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="899">
+        <text value="₍₈₉₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="900">
+        <text value="₍₉₀₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="901">
+        <text value="₍₉₀₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="902">
+        <text value="₍₉₀₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="903">
+        <text value="₍₉₀₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="904">
+        <text value="₍₉₀₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="905">
+        <text value="₍₉₀₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="906">
+        <text value="₍₉₀₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="907">
+        <text value="₍₉₀₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="908">
+        <text value="₍₉₀₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="909">
+        <text value="₍₉₀₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="910">
+        <text value="₍₉₁₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="911">
+        <text value="₍₉₁₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="912">
+        <text value="₍₉₁₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="913">
+        <text value="₍₉₁₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="914">
+        <text value="₍₉₁₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="915">
+        <text value="₍₉₁₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="916">
+        <text value="₍₉₁₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="917">
+        <text value="₍₉₁₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="918">
+        <text value="₍₉₁₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="919">
+        <text value="₍₉₁₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="920">
+        <text value="₍₉₂₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="921">
+        <text value="₍₉₂₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="922">
+        <text value="₍₉₂₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="923">
+        <text value="₍₉₂₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="924">
+        <text value="₍₉₂₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="925">
+        <text value="₍₉₂₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="926">
+        <text value="₍₉₂₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="927">
+        <text value="₍₉₂₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="928">
+        <text value="₍₉₂₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="929">
+        <text value="₍₉₂₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="930">
+        <text value="₍₉₃₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="931">
+        <text value="₍₉₃₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="932">
+        <text value="₍₉₃₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="933">
+        <text value="₍₉₃₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="934">
+        <text value="₍₉₃₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="935">
+        <text value="₍₉₃₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="936">
+        <text value="₍₉₃₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="937">
+        <text value="₍₉₃₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="938">
+        <text value="₍₉₃₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="939">
+        <text value="₍₉₃₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="940">
+        <text value="₍₉₄₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="941">
+        <text value="₍₉₄₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="942">
+        <text value="₍₉₄₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="943">
+        <text value="₍₉₄₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="944">
+        <text value="₍₉₄₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="945">
+        <text value="₍₉₄₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="946">
+        <text value="₍₉₄₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="947">
+        <text value="₍₉₄₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="948">
+        <text value="₍₉₄₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="949">
+        <text value="₍₉₄₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="950">
+        <text value="₍₉₅₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="951">
+        <text value="₍₉₅₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="952">
+        <text value="₍₉₅₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="953">
+        <text value="₍₉₅₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="954">
+        <text value="₍₉₅₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="955">
+        <text value="₍₉₅₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="956">
+        <text value="₍₉₅₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="957">
+        <text value="₍₉₅₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="958">
+        <text value="₍₉₅₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="959">
+        <text value="₍₉₅₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="960">
+        <text value="₍₉₆₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="961">
+        <text value="₍₉₆₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="962">
+        <text value="₍₉₆₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="963">
+        <text value="₍₉₆₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="964">
+        <text value="₍₉₆₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="965">
+        <text value="₍₉₆₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="966">
+        <text value="₍₉₆₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="967">
+        <text value="₍₉₆₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="968">
+        <text value="₍₉₆₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="969">
+        <text value="₍₉₆₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="970">
+        <text value="₍₉₇₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="971">
+        <text value="₍₉₇₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="972">
+        <text value="₍₉₇₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="973">
+        <text value="₍₉₇₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="974">
+        <text value="₍₉₇₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="975">
+        <text value="₍₉₇₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="976">
+        <text value="₍₉₇₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="977">
+        <text value="₍₉₇₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="978">
+        <text value="₍₉₇₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="979">
+        <text value="₍₉₇₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="980">
+        <text value="₍₉₈₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="981">
+        <text value="₍₉₈₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="982">
+        <text value="₍₉₈₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="983">
+        <text value="₍₉₈₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="984">
+        <text value="₍₉₈₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="985">
+        <text value="₍₉₈₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="986">
+        <text value="₍₉₈₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="987">
+        <text value="₍₉₈₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="988">
+        <text value="₍₉₈₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="989">
+        <text value="₍₉₈₉₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="990">
+        <text value="₍₉₉₀₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="991">
+        <text value="₍₉₉₁₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="992">
+        <text value="₍₉₉₂₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="993">
+        <text value="₍₉₉₃₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="994">
+        <text value="₍₉₉₄₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="995">
+        <text value="₍₉₉₅₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="996">
+        <text value="₍₉₉₆₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="997">
+        <text value="₍₉₉₇₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="998">
+        <text value="₍₉₉₈₎"/>
+      </if>
+      <if variable="citation-number" match="any" value="999">
+        <text value="₍₉₉₉₎"/>
+      </if>
+      <else>
+        <text variable="citation-number"/>
+      </else>
+    </choose>
+  </macro>
+  <citation collapse="citation-number">
+    <layout prefix="" suffix="" delimiter=" ">
+      <text macro="format-subscript"/>
+    </layout>
+  </citation>
+  <bibliography et-al-min="6" et-al-use-first="3">
+    <layout>
+      <text variable="citation-number" suffix=". "/>
+      <group delimiter=". ">
+        <names variable="author">
+          <name form="long" and="text" delimiter=", "/>
+        </names>
+        <text variable="title"/>
+        <text variable="container-title" font-style="italic"/>
+        <date variable="issued">
+          <date-part name="year"/>
+        </date>
+        <text variable="volume"/>
+        <text variable="page"/>
+      </group>
+    </layout>
+  </bibliography>
+</style>
